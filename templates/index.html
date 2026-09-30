@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07111f">
+    <title>TravelWise — Your AI Travel Companion</title>
+
+    <style>
+        :root {
+            --bg: #07111f;
+            --panel: rgba(12, 27, 47, 0.82);
+            --panel-strong: #0d2037;
+            --border: rgba(154, 194, 231, 0.14);
+            --text: #eef7ff;
+            --muted: #8ea6bd;
+            --accent: #61dafb;
+            --accent-2: #8b7cff;
+            --user: #1a3857;
+            --assistant: rgba(255, 255, 255, 0.055);
+            --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 12% 10%, rgba(97, 218, 251, 0.14), transparent 28%),
+                radial-gradient(circle at 88% 88%, rgba(139, 124, 255, 0.13), transparent 30%),
+                var(--bg);
+            overflow: hidden;
+        }
+
+        .app {
+            width: min(1180px, 94vw);
+            height: min(900px, 94vh);
+            margin: 3vh auto;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            overflow: hidden;
+            background: var(--panel);
+            backdrop-filter: blur(24px);
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 28px 22px;
+            border-right: 1px solid var(--border);
+            background: rgba(4, 16, 30, 0.52);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #06111f;
+            font-size: 21px;
+            box-shadow: 0 10px 30px rgba(97, 218, 251, 0.18);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
+        .brand span {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .side-title {
+            margin: 0 0 12px;
+            color: #c6d7e8;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .prompt-list {
+            display: grid;
+            gap: 9px;
+        }
+
+        .prompt-chip {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #b8cde0;
+            background: rgba(255, 255, 255, 0.025);
+            font: inherit;
+            font-size: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .prompt-chip:hover {
+            transform: translateY(-1px);
+            border-color: rgba(97, 218, 251, 0.32);
+            background: rgba(97, 218, 251, 0.06);
+            color: var(--text);
+        }
+
+        .side-footer {
+            margin-top: auto;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #b7c9da;
+            font-size: 11px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #59e391;
+            box-shadow: 0 0 12px rgba(89, 227, 145, 0.7);
+        }
+
+        .chat {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 78px;
+            padding: 18px 26px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .header-title p {
+            margin: 3px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .clear-btn {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 11px;
+            color: #9fb4c8;
+            background: transparent;
+            cursor: pointer;
+            font: inherit;
+            font-size: 11px;
+        }
+
+        .clear-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 28px;
+            scroll-behavior: smooth;
+        }
+
+        .welcome {
+            max-width: 680px;
+            margin: 10vh auto 0;
+            text-align: center;
+        }
+
+        .globe {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 18px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(97, 218, 251, 0.2);
+            border-radius: 22px;
+            background: rgba(97, 218, 251, 0.07);
+            font-size: 30px;
+        }
+
+        .welcome h3 {
+            margin: 0;
+            font-size: clamp(26px, 4vw, 38px);
+            letter-spacing: -0.04em;
+        }
+
+        .welcome p {
+            max-width: 540px;
+            margin: 12px auto 0;
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 780px;
+            margin: 0 auto 22px;
+            animation: appear 0.22s ease;
+        }
+
+        @keyframes appear {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            flex: 0 0 34px;
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: rgba(97, 218, 251, 0.09);
+            color: var(--accent);
+            font-size: 15px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message.user .avatar {
+            background: rgba(139, 124, 255, 0.12);
+            color: #b9b0ff;
+        }
+
+        .bubble {
+            max-width: min(680px, 78%);
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 16px 16px 16px 5px;
+            background: var(--assistant);
+            color: #dce9f4;
+            line-height: 1.65;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .message.user .bubble {
+            border-radius: 16px 16px 5px 16px;
+            background: var(--user);
+            color: #eef7ff;
+        }
+
+        .composer-wrap {
+            padding: 16px 22px 20px;
+            border-top: 1px solid var(--border);
+            background: rgba(5, 16, 29, 0.32);
+        }
+
+        .composer {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            padding: 8px 8px 8px 14px;
+            border: 1px solid rgba(154, 194, 231, 0.18);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.045);
+            transition: 0.2s ease;
+        }
+
+        .composer:focus-within {
+            border-color: rgba(97, 218, 251, 0.4);
+            box-shadow: 0 0 0 4px rgba(97, 218, 251, 0.05);
+        }
+
+        textarea {
+            flex: 1;
+            min-height: 42px;
+            max-height: 130px;
+            resize: none;
+            border: 0;
+            outline: 0;
+            color: var(--text);
+            background: transparent;
+            font: inherit;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        textarea::placeholder {
+            color: #6f879d;
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            border: 0;
+            border-radius: 13px;
+            color: #07111f;
+            background: linear-gradient(135deg, var(--accent), #91dfff);
+            cursor: pointer;
+            font-size: 17px;
+            transition: 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 22px rgba(97, 218, 251, 0.18);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .disclaimer {
+            max-width: 800px;
+            margin: 8px auto 0;
+            color: #5f768b;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .typing {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            height: 18px;
+        }
+
+        .typing i {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #8ba6bc;
+            animation: blink 1s infinite;
+        }
+
+        .typing i:nth-child(2) { animation-delay: 0.15s; }
+        .typing i:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes blink {
+            0%, 70%, 100% { opacity: 0.25; transform: translateY(0); }
+            35% { opacity: 1; transform: translateY(-2px); }
+        }
+
+        @media (max-width: 780px) {
+            body {
+                overflow: auto;
+            }
+
+            .app {
+                width: 100%;
+                height: 100vh;
+                min-height: 620px;
+                margin: 0;
+                grid-template-columns: 1fr;
+                border: 0;
+                border-radius: 0;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .chat-header {
+                padding: 16px 18px;
+            }
+
+            .messages {
+                padding: 22px 16px;
+            }
+
+            .bubble {
+                max-width: 84%;
+            }
+
+            .composer-wrap {
+                padding: 12px 12px 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">✦</div>
+                <div>
+                    <h1>TravelWise</h1>
+                    <span>AI travel companion</span>
+                </div>
+            </div>
+
+            <p class="side-title">Try asking</p>
+
+            <div class="prompt-list">
+                <button class="prompt-chip" data-prompt="Plan a 5-day trip to Japan for a first-time visitor.">🇯🇵 First trip to Japan</button>
+                <button class="prompt-chip" data-prompt="What should I pack for a week-long international trip?">🎒 Smart packing list</button>
+                <button class="prompt-chip" data-prompt="Suggest a relaxing 4-day beach vacation on a moderate budget.">🏝️ Beach getaway</button>
+                <button class="prompt-chip" data-prompt="How can I plan an affordable weekend trip?">💰 Budget travel</button>
+            </div>
+
+            <div class="side-footer">
+                <div class="status">
+                    <span class="status-dot"></span>
+                    TravelWise is ready
+                </div>
+            </div>
+        </aside>
+
+        <section class="chat">
+            <header class="chat-header">
+                <div class="header-title">
+                    <div class="avatar">✦</div>
+                    <div>
+                        <h2>TravelWise</h2>
+                        <p>Ask me anything about your next journey</p>
+                    </div>
+                </div>
+                <button class="clear-btn" id="clearBtn">New chat</button>
+            </header>
+
+            <div class="messages" id="messages">
+                <div class="welcome" id="welcome">
+                    <div class="globe">🌍</div>
+                    <h3>Where will we go?</h3>
+                    <p>
+                        Tell TravelWise where you're headed, how long you're going,
+                        or what kind of experience you want. Let's turn your idea into a trip.
+                    </p>
+                </div>
+            </div>
+
+            <div class="composer-wrap">
+                <form class="composer" id="chatForm">
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        maxlength="4000"
+                        placeholder="Ask TravelWise about a destination, itinerary, budget..."
+                        autocomplete="off"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" type="submit" aria-label="Send message">➤</button>
+                </form>
+                <div class="disclaimer">Travel information can change. Verify important details with official sources before traveling.</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const messagesEl = document.getElementById("messages");
+        const welcomeEl = document.getElementById("welcome");
+        const form = document.getElementById("chatForm");
+        const input = document.getElementById("messageInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const clearBtn = document.getElementById("clearBtn");
+
+        let history = [];
+        let busy = false;
+
+        function scrollToBottom() {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function addMessage(role, content) {
+            welcomeEl?.remove();
+
+            const wrapper = document.createElement("div");
+            wrapper.className = `message ${role}`;
+
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent = role === "user" ? "You" : "✦";
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+            bubble.textContent = content;
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            messagesEl.appendChild(wrapper);
+
+            scrollToBottom();
+            return bubble;
+        }
+
+        function addTyping() {
+            welcomeEl?.remove();
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "message model";
+            wrapper.id = "typingMessage";
+
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent = "✦";
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            const typing = document.createElement("div");
+            typing.className = "typing";
+            typing.innerHTML = "<i></i><i></i><i></i>";
+
+            bubble.appendChild(typing);
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            messagesEl.appendChild(wrapper);
+
+            scrollToBottom();
+        }
+
+        function removeTyping() {
+            document.getElementById("typingMessage")?.remove();
+        }
+
+        function setBusy(value) {
+            busy = value;
+            sendBtn.disabled = value;
+            input.disabled = value;
+        }
+
+        async function sendMessage(text) {
+            if (busy || !text.trim()) return;
+
+            const message = text.trim();
+            input.value = "";
+            input.style.height = "auto";
+
+            addMessage("user", message);
+            addTyping();
+            setBusy(true);
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message,
+                        history
+                    })
+                });
+
+                const data = await response.json();
+                removeTyping();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Unable to get a response.");
+                }
+
+                const answer = data.response || "I couldn't generate a response.";
+                addMessage("model", answer);
+
+                history.push(
+                    { role: "user", content: message },
+                    { role: "model", content: answer }
+                );
+                history = history.slice(-12);
+            } catch (error) {
+                removeTyping();
+                addMessage("model", error.message || "Something went wrong. Please try again.");
+            } finally {
+                setBusy(false);
+                input.focus();
+            }
+        }
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            sendMessage(input.value);
+        });
+
+        input.addEventListener("input", () => {
+            input.style.height = "auto";
+            input.style.height = `${Math.min(input.scrollHeight, 130)}px`;
+        });
+
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                form.requestSubmit();
+            }
+        });
+
+        clearBtn.addEventListener("click", () => {
+            history = [];
+            messagesEl.innerHTML = `
+                <div class="welcome" id="welcome">
+                    <div class="globe">🌍</div>
+                    <h3>Where will we go?</h3>
+                    <p>
+                        Tell TravelWise where you're headed, how long you're going,
+                        or what kind of experience you want. Let's turn your idea into a trip.
+                    </p>
+                </div>
+            `;
+            input.value = "";
+            input.style.height = "auto";
+            input.focus();
+        });
+
+        document.querySelectorAll(".prompt-chip").forEach((button) => {
+            button.addEventListener("click", () => {
+                input.value = button.dataset.prompt || "";
+                input.dispatchEvent(new Event("input"));
+                input.focus();
+            });
+        });
+
+        input.focus();
+    </script>
+</body>
+</html>
